@@ -21,7 +21,7 @@ namespace Smart_Tools
         /// </summary>
         public Smart_ToolsComponent()
           : base("Smart Merge", "SM",
-            "Automatically connects selected components to a Merge component in order.",
+            "Automatically connects selected components to a Merge component.",
             "Smart Tools", "Workflow")
         {
         }
