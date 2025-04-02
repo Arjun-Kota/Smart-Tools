@@ -56,41 +56,45 @@ namespace Smart_Tools
 
             if (mergeComp == null) return; // Exit if no Merge component is found
 
-            // Sort selected objects by Y (top to bottom) and then by X (left to right)
-            List<IGH_DocumentObject> sortedObjs = selectedObjs
-                .Where(obj => obj != mergeComp) // Exclude Merge component
-                .OrderBy(obj => obj.Attributes.Pivot.Y)
-                .ThenBy(obj => obj.Attributes.Pivot.X)
-                .ToList();
-
-            int position = 0;
-
-            foreach (IGH_DocumentObject obj in sortedObjs)
+            // Delay execution to prevent errors
+            Grasshopper.Instances.ActiveCanvas.Document.ScheduleSolution(1, doc =>
             {
-                IGH_Param source = null;
+                List<IGH_DocumentObject> sortedObjs = selectedObjs
+                    .Where(obj => obj != mergeComp) // Exclude Merge component
+                    .OrderBy(obj => obj.Attributes.Pivot.Y)
+                    .ThenBy(obj => obj.Attributes.Pivot.X)
+                    .ToList();
 
-                if (obj is IGH_Component ghc && ghc.Params.Output.Count > 0)
-                    source = ghc.Params.Output[0]; // Get first output
-                else if (obj is IGH_Param ghp)
-                    source = ghp;
-                else if (obj is GH_Panel pan)
-                    source = pan;
+                int position = 0;
 
-                if (source != null)
+                foreach (IGH_DocumentObject obj in sortedObjs)
                 {
-                    // Find first available input slot in Merge component
-                    while (position < mergeComp.Params.Input.Count && mergeComp.Params.Input[position].SourceCount > 0)
-                    {
-                        position++;
-                    }
+                    IGH_Param source = null;
 
-                    if (position < mergeComp.Params.Input.Count)
+                    if (obj is IGH_Component ghc && ghc.Params.Output.Count > 0)
+                        source = ghc.Params.Output[0]; // Get first output
+                    else if (obj is IGH_Param ghp)
+                        source = ghp;
+                    else if (obj is GH_Panel pan)
+                        source = pan;
+
+                    if (source != null)
                     {
-                        IGH_Param new_param = mergeComp.Params.Input[position];
-                        new_param.AddSource(source);
+                        while (position < mergeComp.Params.Input.Count && mergeComp.Params.Input[position].SourceCount > 0)
+                        {
+                            position++;
+                        }
+
+                        if (position < mergeComp.Params.Input.Count)
+                        {
+                            IGH_Param new_param = mergeComp.Params.Input[position];
+                            new_param.AddSource(source);
+                        }
                     }
                 }
-            }
+
+                mergeComp.ExpireSolution(true); // Force Grasshopper to update
+            });
         }
 
         protected override System.Drawing.Bitmap Icon => null;
